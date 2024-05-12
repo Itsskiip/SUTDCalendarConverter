@@ -7,6 +7,7 @@ Tested working on Python >= v3.90
 Works completely on the local machine with only the python standard library.
 
 # Usage
+Download convert.py or copy & paste the code into your own python IDE/interpreter.
 
 The script comes with a simple CLI interface to guide you through the process. 
 
