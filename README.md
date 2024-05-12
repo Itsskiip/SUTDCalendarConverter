@@ -1,17 +1,21 @@
-#Skip's Calendar Converter
+# Skip's Calendar Converter
+
 Converts SUTD's calendar into a CSV file readable by Google Calendar.
+
 Tested working on Python >= v3.90
 
 Works completely on the local machine with only the python standard library.
 
-#Usage
+# Usage
+
 The script comes with a simple CLI interface to guide you through the process. 
 
 Alternatively, after running the script, follow the steps below:
 
 Run convert.py. A terminal window should open.
 
-##Scraping SUTD's Schedule
+## Scraping SUTD's Schedule
+
 1. Navigate to SUTD MyPortal on your browser.
 2. Navigate to My Menu > My Record > My Weekly Schedule.
 3. Check the 'List View' radio button.
@@ -22,7 +26,7 @@ Re-open the terminal window and press Enter. You can choose to rename each class
 
 After renaming, the script will generate a file "calendar.csv" in the same directory. You can close the terminal after this.
 
-##Uploading to Google Calendar
+## Uploading to Google Calendar
 1. Navigate to calendar.google.com in your browser.
 2. On the sidebar, find "Other Calendars" and click the "+" symbol next to it
 3. Click "Create new calendar"
