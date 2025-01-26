@@ -1,5 +1,5 @@
 import re
-from datetime import date, time
+from datetime import date, time, timedelta
 
 def parse_date(date_str) -> date:
     return date(*map(int, date_str.split('/')[::-1]))
@@ -40,6 +40,8 @@ def parse_data(pasted_str) -> list[dict]:
     #Top level Regex (e.g. Course code, name)
     courses_re = r'(?P<code>\d{2} .\d{3}\w*) - (?P<course>[^\n]+).+?(?P<course_data>(?:' + course_data_re + ')+)'
     
+    weekday_map = ('Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su')
+
     course_matches = re.finditer(courses_re, pasted_str, flags)
 
     courses = []
@@ -67,6 +69,9 @@ def parse_data(pasted_str) -> list[dict]:
                 #Convert start & end dates from DD/MM/YY to MM/DD/YY
                 d['start_date'] = parse_date(d['start_date'])
                 d['end_date'] = parse_date(d['end_date'])
+
+                #Convert day of week to an integer
+                d['day'] = weekday_map.index(d['day'])
 
                 #Seperate the time number from AM/PM (e.g. 12:00AM -> 12:00 AM)
                 d['start_time'] = parse_time(d['start_time'])
@@ -110,45 +115,51 @@ if __name__ == '__main__':
             print(f'{len(courses)} courses found.')
             for i, course in enumerate(courses):
                 course['display_name'] = course['code'] + ' - ' + course['name']
-                print(f'{i})\t {course["display_name"]}')
+                print(f'{i})\t {course['display_name']}')
 
                 confirmed = False
                 while not confirmed:
                     name = input(f'\t\tEnter a custom name for this course, or press enter to accept the default: ')
                     if name:
-                        confirmed = input(f'\t\tNew course name: "{name}", confirm? Y/N: ').lower() == 'y'
+                        confirmed = input(f'\t\tNew course name: "{name}", confirm? Y/n: ').lower() in ("y", "")
                         if confirmed: course['display_name'] = name
                     else:
-                        confirmed = input(f'\t\tDefault course name: "{course["display_name"]}", confirm? Y/N: ').lower() == 'y'
+                        confirmed = input(f'\t\tDefault course name: "{course['display_name']}", confirm? Y/n: ').lower() in ("y", "")
                 
                 differentiate_types = False
 
                 if len(course['type']) > 1:
                     ans = ' '
-                    while not ans or ans.lower() not in 'yn':
-                        ans = input(f'\n\t\tMultiple types of classes "{", ".join(course["type"])}" found for this course.\n'
-                            '\t\tDo you want to differentiate between these types? Y/N\n'
+                    while ans.lower() not in ('y', 'n', ''):
+                        ans = input(f'\n\t\tMultiple types of classes "{", ".join(course['type'])}" found for this course.\n'
+                            '\t\tDo you want to differentiate between these types? Y/n\n'
                             '\t\t\tIf Y, the following events will be created:\n' + \
                             '\n'.join(['\t\t\t\t' + course['display_name'] + ' ' + ('Cohort' if s == 'CBL' else s) for s in course['type']]) + \
-                            f'\n\t\t\tIf N, both classes will be named {course["display_name"]}: ')
-                    differentiate_types = ans.lower() == 'y'
+                            f'\n\t\t\tIf N, both classes will be named {course['display_name']}: ')
+                    differentiate_types = ans.lower() in ('y', '')
 
                 for type, classes in course['type'].items():
                     for c in classes:
-                        d = {
-                            'Subject': course['display_name'],
-                            'Start Date': f'{c["start_date"]:%m/%d/%Y}'.upper(),
-                            'Start Time': f'{c["start_time"]:%I:%M %p}'.upper(),
-                            'End Date': f'{c["end_date"]:%m/%d/%Y}',
-                            'End Time': f'{c["end_time"]:%I:%M %p}',
-                            'Description': ', '.join(c['lecturers']),
-                            'Location': c['loc']
-                        }
+                        start_date: date = c['start_date']
+                        start_date = start_date + timedelta((c['day'] - start_date.weekday()) % 7) #Offset the actual date in case it doesn't fall on the "Start Date"
+                        end_date = c['end_date']
 
-                        if differentiate_types:
-                            d['Subject'] += ' Cohort' if type == 'CBL' else ' ' + type
+                        for offset in range((end_date - start_date).days // 7 + 1):
+                            dte = start_date + offset * timedelta(7)
+                            d = {
+                                'Subject': course['display_name'],
+                                'Start Date': f'{dte:%m/%d/%Y}'.upper(),
+                                'Start Time': f'{c['start_time']:%I:%M %p}',
+                                'End Date': f'{dte:%m/%d/%Y}'.upper(),
+                                'End Time': f'{c['end_time']:%I:%M %p}',
+                                'Description': ', '.join(c['lecturers']),
+                                'Location': c['loc']
+                            }
 
-                        output_ls.append(d)
+                            if differentiate_types:
+                                d['Subject'] += ' Cohort' if type == 'CBL' else ' ' + type
+
+                            output_ls.append(d)
 
             print('Generating calendar.csv...\n')
 
