@@ -115,7 +115,8 @@ if __name__ == '__main__':
             print(f'{len(courses)} courses found.')
             for i, course in enumerate(courses):
                 course['display_name'] = course['code'] + ' - ' + course['name']
-                print(f'{i})\t {course['display_name']}')
+                display_name = course['display_name']
+                print(f'{i})\t {display_name}')
 
                 confirmed = False
                 while not confirmed:
@@ -124,18 +125,19 @@ if __name__ == '__main__':
                         confirmed = input(f'\t\tNew course name: "{name}", confirm? Y/n: ').lower() in ("y", "")
                         if confirmed: course['display_name'] = name
                     else:
-                        confirmed = input(f'\t\tDefault course name: "{course['display_name']}", confirm? Y/n: ').lower() in ("y", "")
+                        confirmed = input(f'\t\tDefault course name: "{display_name}", confirm? Y/n: ').lower() in ("y", "")
                 
                 differentiate_types = False
 
                 if len(course['type']) > 1:
                     ans = ' '
+                    course_type = course['type']
                     while ans.lower() not in ('y', 'n', ''):
-                        ans = input(f'\n\t\tMultiple types of classes "{", ".join(course['type'])}" found for this course.\n'
+                        ans = input(f'\n\t\tMultiple types of classes "{", ".join(course_type)}" found for this course.\n'
                             '\t\tDo you want to differentiate between these types? Y/n\n'
                             '\t\t\tIf Y, the following events will be created:\n' + \
                             '\n'.join(['\t\t\t\t' + course['display_name'] + ' ' + ('Cohort' if s == 'CBL' else s) for s in course['type']]) + \
-                            f'\n\t\t\tIf N, both classes will be named {course['display_name']}: ')
+                            f'\n\t\t\tIf N, both classes will be named {display_name}: ')
                     differentiate_types = ans.lower() in ('y', '')
 
                 for type, classes in course['type'].items():
@@ -146,14 +148,18 @@ if __name__ == '__main__':
 
                         for offset in range((end_date - start_date).days // 7 + 1):
                             dte = start_date + offset * timedelta(7)
+                            start_time = c['start_time']
+                            end_time = c['end_time']
+                            lecturers = c['lecturers']
+                            loc = c['loc']
                             d = {
                                 'Subject': course['display_name'],
                                 'Start Date': f'{dte:%m/%d/%Y}'.upper(),
-                                'Start Time': f'{c['start_time']:%I:%M %p}',
+                                'Start Time': f'{start_time:%I:%M %p}',
                                 'End Date': f'{dte:%m/%d/%Y}'.upper(),
-                                'End Time': f'{c['end_time']:%I:%M %p}',
-                                'Description': ', '.join(c['lecturers']),
-                                'Location': c['loc']
+                                'End Time': f'{end_time:%I:%M %p}',
+                                'Description': ', '.join(lecturers),
+                                'Location': loc
                             }
 
                             if differentiate_types:
